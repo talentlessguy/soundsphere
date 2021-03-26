@@ -30,7 +30,7 @@ console.log(json)
 
 [releases]: https://img.shields.io/github/v/release/talentlessguy/soundsphere?style=flat-square
 [docs-badge]: https://img.shields.io/github/v/release/talentlessguy/soundsphere?color=yellow&label=Documentation&logo=deno&style=flat-square
-[docs]: https://doc.deno.land/https/deno.land/x/soundsphere/mod.ts
+[docs]: https://doc.deno.land/https/deno.land/x/soundsphere/src/index.ts
 [releases-page]: https://github.com/talentlessguy/soundsphere/releases
 [npm-v-image]: https://img.shields.io/npm/v/soundsphere.svg?style=flat-square
 [npm-url]: https://www.npmjs.com/package/soundsphere
