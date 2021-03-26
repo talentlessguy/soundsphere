@@ -8,12 +8,15 @@ if (typeof fetch === 'undefined') {
 export interface SoundCloudInit {
   id: string
   secret: string
-  user?: string
+  user?: string | number
 }
 
-export interface User {
+export interface Entity {
   id: number
   kind: string
+}
+
+export interface User extends Entity {
   permalink: string
   username: string
   last_modified: string
@@ -98,8 +101,32 @@ export interface Tracks {
   downloads_remaining: null | string
 }
 
-export interface PaginatedResponse {
-  collection: User[]
+export interface Comment extends Entity {
+  created_at: string
+  user_id: number
+  track_id: number
+  timestamp: number
+  body: string
+  uri: string
+  user: Pick<
+    User,
+    | 'id'
+    | 'kind'
+    | 'permalink'
+    | 'username'
+    | 'last_modified'
+    | 'uri'
+    | 'permalink_url'
+    | 'avatar_url'
+    | 'followers_count'
+    | 'followings_count'
+    | 'public_favorites_count'
+    | 'reposts_count'
+  >
+}
+
+export interface PaginatedResponse<T> {
+  collection: T[]
   next_href: string
 }
 
@@ -171,7 +198,7 @@ export class SoundCloud {
     limit = 50,
     user,
     linkedPartitioning = false
-  }: PaginatedRequestParameters): Promise<PaginatedResponse> {
+  }: PaginatedRequestParameters): Promise<PaginatedResponse<User>> {
     const res = await fetch(
       `${API_URL}/users/${user || this.username}/followers?client_id=${
         this.id
@@ -190,9 +217,21 @@ export class SoundCloud {
     limit = 50,
     user,
     linkedPartitioning = false
-  }: PaginatedRequestParameters): Promise<PaginatedResponse> {
+  }: PaginatedRequestParameters): Promise<PaginatedResponse<User>> {
     const res = await fetch(
       `${API_URL}/users/${user || this.username}/followings?client_id=${
+        this.id
+      }&limit=${limit}&linkedPartitioning=${linkedPartitioning}`
+    )
+
+    const json = await res.json()
+
+    return json
+  }
+
+  async comments({ limit = 50, user, linkedPartitioning = false }: PaginatedRequestParameters): Promise<Comment[]> {
+    const res = await fetch(
+      `${API_URL}/users/${user || this.username}/comments?client_id=${
         this.id
       }&limit=${limit}&linkedPartitioning=${linkedPartitioning}`
     )

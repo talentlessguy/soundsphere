@@ -1,6 +1,6 @@
 {
   "name": "soundsphere",
-  "version": "0.0.0",
+  "version": "0.0.0-wip2",
   "description": "A modern SoundCloud API client for Node.js and Deno",
   "type": "module",
   "main": "./dist/index.js",
