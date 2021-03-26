@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "module": "ESNext",
-    "target": "ESNext"
-  }
+    "target": "ES2019"
+  },
+  "include": ["src"]
 }

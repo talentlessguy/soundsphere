@@ -1,6 +1,6 @@
 {
   "name": "soundsphere",
-  "version": "0.0.0-wip2",
+  "version": "0.0.0-wip3",
   "description": "A modern SoundCloud API client for Node.js and Deno",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,15 +11,19 @@
     "./": "./"
   },
   "scripts": {
-    "build": "tsup src/index.ts --minify-whitespace --format esm --dts"
+    "build": "tsup src/index.ts --minify-whitespace --format esm --dts",
+    "prepare": "pnpm build"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/talentlessguy/soundnode.git"
   },
-  "keywords": [],
+  "keywords": [
+    "soundcloud",
+    "soundcloud-api"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/talentlessguy/soundnode/issues"
   },
@@ -32,5 +36,8 @@
   },
   "dependencies": {
     "node-fetch": "^2.6.1"
+  },
+  "engines": {
+    "node": ">=12.4"
   }
 }
