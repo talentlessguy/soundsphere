@@ -1,4 +1,5 @@
 if (typeof fetch === 'undefined') {
+  // @ts-ignore
   if (typeof require === 'undefined') {
     /**
      * Load Node.js polyfill if running in Node
@@ -7,6 +8,7 @@ if (typeof fetch === 'undefined') {
     // @ts-ignore
     globalThis.fetch = mod.default
   } else {
+    // @ts-ignore
     globalThis.fetch = require('node-fetch')
   }
 }
@@ -212,7 +214,7 @@ const fetchApi = async (
 
 export class SoundCloudUser {
   id: string
-  secret: string
+  secret?: string
   username?: number | string
   constructor({ id, secret, user }: SoundCloudInit) {
     this.id = id
@@ -227,7 +229,7 @@ export class SoundCloudUser {
       linkedPartitioning: boolean
     }>
   ) {
-    return await fetchApi('users', path, this.username, this.id, opts)
+    return await fetchApi('users', path, this.username!, this.id, opts)
   }
   /**
    * Returns a user.
@@ -291,27 +293,27 @@ export class SoundCloudTrack {
     this.trackId = trackId
   }
   async track(id: number | string) {
-    const res = await fetch(`${API_URL}/tracks/${id || this.trackId}?client_id=${this.id}`)
+    const res = await fetch(`${API_URL}/tracks/${id! || this.trackId}?client_id=${this.id}`)
 
     const json = await res.json()
 
     return json
   }
   async streams(id: number | string) {
-    const res = await fetch(`${API_URL}/tracks/${id || this.trackId}/streams?client_id=${this.id}`)
+    const res = await fetch(`${API_URL}/tracks/${id! || this.trackId}/streams?client_id=${this.id}`)
 
     const json = await res.json()
 
     return json
   }
   async comments(opts: PaginatedRequestParameters) {
-    return await fetchApi('tracks', 'comments', opts.id || this.trackId, this.id, opts)
+    return await fetchApi('tracks', 'comments', opts.id! || this.trackId!, this.id, opts)
   }
   async favoriters(opts: PaginatedRequestParameters) {
-    return await fetchApi('tracks', 'favoriters', opts.id || this.trackId, this.id, opts)
+    return await fetchApi('tracks', 'favoriters', opts.id! || this.trackId!, this.id, opts)
   }
   async related(opts: PaginatedRequestParameters) {
-    return await fetchApi('tracks', 'related', opts.id || this.trackId, this.id, opts)
+    return await fetchApi('tracks', 'related', opts.id! || this.trackId!, this.id, opts)
   }
 }
 
@@ -335,7 +337,7 @@ export class SoundCloudTrack {
  */
 export class SoundCloud {
   id: string
-  secret: string
+  secret?: string
   username?: number | string
   user?: SoundCloudUser
   track?: SoundCloudTrack
