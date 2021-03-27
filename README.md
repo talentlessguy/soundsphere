@@ -12,10 +12,33 @@ A modern [SoundCloud](https://soundcloud.com) API client for Node.js and Deno.
 - ✨ Typed methods (generated via [quicktype](https://app.quicktype.io/?l=ts))
 - ⚡ Targets ES2019 (Node 12+ LTS)
 
-## Example
+## API Implementation Status
+
+- [x] Users (`/users/{user_id}`) (all `GET` methods)
+- [x] Tracks (`/tracks/{track_id}`) (all `GET` methods)
+
+## Examples
+
+### Node.js
 
 ```ts
 import { SoundCloud } from 'soundsphere'
+
+const sc = new SoundCloud({
+  id: 'CLIENT_ID',
+  secret: 'CLIENT_SECRET'
+})
+const { id } = await sc.user('uvulauvula')
+
+const json = (await sc.tracks({ user: id }))[1]
+
+console.log(json)
+```
+
+### Deno
+
+```ts
+import { SoundCloud } from 'https://deno.land/x/soundsphere/src/index.ts'
 
 const sc = new SoundCloud({
   id: 'CLIENT_ID',

@@ -1,13 +1,21 @@
 if (typeof fetch === 'undefined') {
-  // @ts-ignore
-  globalThis.fetch = require('node-fetch')
+  if (typeof require === 'undefined') {
+    /**
+     * Load Node.js polyfill if running in Node
+     */
+    const mod = (async () => await import('node-fetch'))()
+    // @ts-ignore
+    globalThis.fetch = mod.default
+  } else {
+    globalThis.fetch = require('node-fetch')
+  }
 }
 
 /* Interfaces */
 
 export interface SoundCloudInit {
   id: string
-  secret: string
+  secret?: string
   user?: string | number
 }
 
@@ -44,9 +52,7 @@ export interface User extends Entity {
   reposts_count: number
 }
 
-export interface Tracks {
-  kind: string
-  id: number
+export interface Track extends Entity {
   created_at: string
   user_id: number
   duration: number
@@ -125,33 +131,86 @@ export interface Comment extends Entity {
   >
 }
 
+export interface Playlist extends Entity {
+  artwork_url: string
+  created_at: string
+  description: null
+  downloadable: boolean
+  duration: number
+  ean: null
+  embeddable_by: string
+  genre: string
+  label: null
+  label_id: null
+  label_name: null
+  last_modified: string
+  license: string
+  likes_count: number
+  permalink: string
+  permalink_url: string
+  playlist_type: string
+  purchase_title: null
+  purchase_url: null
+  release: null
+  release_day: null
+  release_month: null
+  release_year: null
+  sharing: string
+  streamable: boolean
+  tag_list: string
+  tags: string
+  title: string
+  track_count: number
+  tracks: Track[]
+  tracks_uri: string
+  type: string
+  uri: string
+  user: Pick<User, 'permalink_url' | 'permalink' | 'username' | 'uri' | 'last_modified' | 'id' | 'kind' | 'avatar_url'>
+  user_id: number
+}
+
+export interface WebProfile extends Entity {
+  created_at: string
+  service: string
+  title: string
+  url: string
+  username: string
+}
+
 export interface PaginatedResponse<T> {
   collection: T[]
   next_href: string
 }
 
-export type PaginatedRequestParameters = Partial<{ user: number | string; limit: number; linkedPartitioning: boolean }>
+export type PaginatedRequestParameters = Partial<{ id: number | string; limit: number; linkedPartitioning: boolean }>
 
 const API_URL = 'https://api.soundcloud.com'
-/**
- * API client class with methods wrapping the SoundCloud API.
- *
- * @example
- * ```ts
-  import { SoundCloud } from 'soundsphere'
 
-  const sc = new SoundCloud({
-    id: 'CLIENT_ID',
-    secret: 'CLIENT_SECRET'
-  })
-  const { id } = await sc.user('uvulauvula')
+const str = (obj: Record<string, any>): Record<string, string> => {
+  Object.entries(obj).forEach(([k, v]) => (obj[k] = `${v}`))
 
-  const json = (await sc.tracks({ user: id }))[1]
+  return obj
+}
 
-  console.log(json)
- * ```
- */
-export class SoundCloud {
+const fetchApi = async (
+  endpoint: string,
+  path: string,
+  username: string | number,
+  id: string | number,
+  opts: PaginatedRequestParameters
+) => {
+  const params = new URLSearchParams(str({ limit: 50, linkedPartitioning: false, ...opts }))
+
+  const reqUrl = `${API_URL}/${endpoint}/${opts.id || username}/${path}?client_id=${id}&${params.toString()}`
+
+  const res = await fetch(reqUrl)
+
+  const json = await res.json()
+
+  return json
+}
+
+export class SoundCloudUser {
   id: string
   secret: string
   username?: number | string
@@ -160,84 +219,131 @@ export class SoundCloud {
     this.secret = secret
     this.username = user
   }
+  private async fetch(
+    path: string,
+    opts: Partial<{
+      user: number | string
+      limit: number
+      linkedPartitioning: boolean
+    }>
+  ) {
+    return await fetchApi('users', path, this.username, this.id, opts)
+  }
   /**
    * Returns a user.
    * @param user username or user ID
    */
-  async user(user: number | string): Promise<User> {
-    const res = await fetch(`${API_URL}/users/${user || this.username}?client_id=${this.id}`)
-
-    const json = await res.json()
-
-    return json
+  async user(user?: number | string): Promise<User> {
+    return await this.fetch('', { user })
   }
-  async tracks({
-    user,
-    limit = 50,
-    linkedPartitioning = false
-  }: Partial<{
-    user: number | string
-    limit: number
-    linkedPartitioning: boolean
-  }> = {}): Promise<Tracks> {
-    const res = await fetch(
-      `${API_URL}/users/${user || this.username}/tracks?client_id=${
-        this.id
-      }&limit=${limit}&linkedPartitioning=${linkedPartitioning}`
-    )
-
-    const json = await res.json()
-
-    return json
+  async tracks(opts: PaginatedRequestParameters): Promise<PaginatedResponse<Track>> {
+    return await this.fetch('tracks', opts)
   }
   /**
    * Returns a list of users who follow that user.
    * @param params request parameters
    */
-  async followers({
-    limit = 50,
-    user,
-    linkedPartitioning = false
-  }: PaginatedRequestParameters): Promise<PaginatedResponse<User>> {
-    const res = await fetch(
-      `${API_URL}/users/${user || this.username}/followers?client_id=${
-        this.id
-      }&limit=${limit}&linkedPartitioning=${linkedPartitioning}`
-    )
-
-    const json = await res.json()
-
-    return json
+  async followers(opts: PaginatedRequestParameters): Promise<PaginatedResponse<User>> {
+    return await this.fetch('followers', opts)
   }
   /**
    * Returns list of users that user follows.
    * @param params request parameters
    */
-  async followings({
-    limit = 50,
-    user,
-    linkedPartitioning = false
-  }: PaginatedRequestParameters): Promise<PaginatedResponse<User>> {
-    const res = await fetch(
-      `${API_URL}/users/${user || this.username}/followings?client_id=${
-        this.id
-      }&limit=${limit}&linkedPartitioning=${linkedPartitioning}`
-    )
+  async followings(opts: PaginatedRequestParameters): Promise<PaginatedResponse<User>> {
+    return await this.fetch('followings', opts)
+  }
+  /**
+   * Returns a list of user's comments.
+   * @param params request parameters
+   */
+  async comments(opts: PaginatedRequestParameters): Promise<Comment[]> {
+    return await this.fetch('followers', opts)
+  }
+  /**
+   * Returns a list of user's playlists.
+   * @param params request parameters
+   */
+  async playlists(opts: PaginatedRequestParameters): Promise<PaginatedResponse<Playlist>> {
+    return await this.fetch('playlists', opts)
+  }
+  /**
+   * Returns list of user's links added to their profile (website, facebook, instagram).
+   * @param params request parameters
+   */
+  async webProfiles(opts: PaginatedRequestParameters): Promise<PaginatedResponse<WebProfile>> {
+    return await this.fetch('web-profiles', opts)
+  }
+  /**
+   * Returns a list of user's liked tracks.
+   * @param params request parameters
+   */
+  async likedTracks(opts: PaginatedRequestParameters): Promise<PaginatedResponse<Track>> {
+    return await this.fetch('likes/tracks', opts)
+  }
+}
+
+export class SoundCloudTrack {
+  id: string
+  trackId?: string | number
+  constructor({ id, trackId }: SoundCloudInit & { trackId?: number | string }) {
+    this.id = id
+    this.trackId = trackId
+  }
+  async track(id: number | string) {
+    const res = await fetch(`${API_URL}/tracks/${id || this.trackId}?client_id=${this.id}`)
 
     const json = await res.json()
 
     return json
   }
-
-  async comments({ limit = 50, user, linkedPartitioning = false }: PaginatedRequestParameters): Promise<Comment[]> {
-    const res = await fetch(
-      `${API_URL}/users/${user || this.username}/comments?client_id=${
-        this.id
-      }&limit=${limit}&linkedPartitioning=${linkedPartitioning}`
-    )
+  async streams(id: number | string) {
+    const res = await fetch(`${API_URL}/tracks/${id || this.trackId}/streams?client_id=${this.id}`)
 
     const json = await res.json()
 
     return json
+  }
+  async comments(opts: PaginatedRequestParameters) {
+    return await fetchApi('tracks', 'comments', opts.id || this.trackId, this.id, opts)
+  }
+  async favoriters(opts: PaginatedRequestParameters) {
+    return await fetchApi('tracks', 'favoriters', opts.id || this.trackId, this.id, opts)
+  }
+  async related(opts: PaginatedRequestParameters) {
+    return await fetchApi('tracks', 'related', opts.id || this.trackId, this.id, opts)
+  }
+}
+
+/**
+ * API client class with methods wrapping the SoundCloud API.
+ *
+ * @example
+ * ```ts
+  import { SoundCloudUser } from 'soundsphere'
+
+  const { user } = new SoundCloudUser({
+    id: 'CLIENT_ID',
+    secret: 'CLIENT_SECRET'
+  })
+  const { id } = await user.user('uvulauvula')
+
+  const json = (await user.tracks({ user: id }))[1]
+
+  console.log(json)
+ * ```
+ */
+export class SoundCloud {
+  id: string
+  secret: string
+  username?: number | string
+  user?: SoundCloudUser
+  track?: SoundCloudTrack
+  constructor({ id, secret, user }: SoundCloudInit) {
+    this.id = id
+    this.secret = secret
+    this.username = user
+    this.user = new SoundCloudUser({ id, secret, user })
+    this.track = new SoundCloudTrack({ id })
   }
 }
