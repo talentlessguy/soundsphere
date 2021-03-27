@@ -24,13 +24,13 @@ A modern [SoundCloud](https://soundcloud.com) API client for Node.js and Deno.
 ```ts
 import { SoundCloud } from 'soundsphere'
 
-const sc = new SoundCloud({
+const { user } = new SoundCloud({
   id: 'CLIENT_ID',
   secret: 'CLIENT_SECRET'
 })
-const { id } = await sc.user('uvulauvula')
+const { id } = await user.user('uvulauvula')
 
-const json = (await sc.tracks({ user: id }))[1]
+const json = (await user.tracks({ user: id }))[1]
 
 console.log(json)
 ```
